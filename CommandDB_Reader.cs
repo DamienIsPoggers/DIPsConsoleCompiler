@@ -16,6 +16,7 @@ namespace DIPsConsoleCompiler
         string[] db;
         List<Command> commands = new List<Command>();
         public int errorAt;
+        public bool made = false;
 
         public void init(string dbPath)
         {
@@ -139,7 +140,6 @@ namespace DIPsConsoleCompiler
         {
             return commands[id];
         }
-
 
         public string[] getArgs(int dbId)
         {

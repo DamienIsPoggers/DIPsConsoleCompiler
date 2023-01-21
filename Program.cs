@@ -27,12 +27,8 @@ namespace DIPsConsoleCompiler
             {
                 inPath = args[0];
                 outPath = args[1];
-                if (argLength >= 3)
-                    dB_Reader.init(args[2]);
-                else
-                    dB_Reader.init(Environment.CurrentDirectory + "/CommandDB/DPScript_1.0.txt");
 
-                for (int i = 4; i < argLength; i++)
+                for (int i = 2; i < argLength; i++)
                 {
                     switch (args[i])
                     {
@@ -52,8 +48,15 @@ namespace DIPsConsoleCompiler
                             i++;
                             version = UInt16.Parse(args[i]);
                             break;
+                        case "-db":
+                            i++;
+                            dB_Reader.init(args[i]);
+                            break;
                     }
                 }
+
+                if(!dB_Reader.made)
+                    dB_Reader.init(Environment.CurrentDirectory + "/CommandDB/DPScript_1.0.txt");
 
                 if (!(dB_Reader.errorAt > -1))
                     dbValid = true;
@@ -66,7 +69,7 @@ namespace DIPsConsoleCompiler
                 Console.WriteLine("CommandDB Successfully Parsed!");
                 //dB_Reader.logAllCommands();
                 if (decompile)
-                    p.Decompiler(inPath, outPath, dB_Reader, version);
+                    p.Decompiler(inPath, outPath, dB_Reader);
                 else
                     p.Compiler(inPath, outPath, dB_Reader, version);
             }
@@ -77,9 +80,93 @@ namespace DIPsConsoleCompiler
         }
 
 
-        public void Decompiler(string inPath, string outPath, CommandDB_Reader db_Reader, ushort version)
+        public void Decompiler(string inPath, string outPath, CommandDB_Reader db_Reader)
         {
+            Console.WriteLine("Parsing file for decompilation.");
 
+            DPS_FileReader fileReader = new DPS_FileReader();
+            fileReader.loadScript(inPath, db_Reader);
+            scriptFile file = fileReader.getScript();
+            List<string> buffer = new List<string>();
+
+            Console.WriteLine("Parsing Complete!\nWriting to Text File.");
+
+            for (int i = 0; i < file.entries.Count; i++)
+            {
+                scriptEntry tempEntry = file.entries[i];
+                string entryString = "entry(\"" + tempEntry.name + "\", ";
+                if (tempEntry.subroutine)
+                    entryString += "true)";
+                else
+                    entryString += "false)";
+
+                buffer.Add(entryString);
+
+                int currentIndent = 1;
+                for (int i2 = 0; i2 < tempEntry.commands.Count; i2++)
+                {
+                    string tempString = "";
+                    for (int i3 = 0; i3 < currentIndent; i3++)
+                        tempString += "\t";
+
+                    Command tempCommand = db_Reader.getCommandInDB(db_Reader.findCommandID(tempEntry.commands[i2].id));
+                    tempString += tempCommand.name + "(";
+                    int curString = 0, curInt = 0, curUint = 0, curBool = 0, curByte = 0, curFloat = 0;
+                    for (int i3 = 0; i3 < tempCommand.args.Length; i3++)
+                    {
+                        if (tempCommand.args[i3] != "n")
+                        {
+                            int typeCount = Int32.Parse(tempCommand.args[i3][0].ToString());
+                            //Console.WriteLine("Parsed " + tempCommand.name + " args " + i3);
+                            for (int i4 = 0; i4 < typeCount; i4++)
+                            {
+                                switch (tempCommand.args[i3][1])
+                                {
+                                    case 's':
+                                        tempString += "\"" + tempEntry.commands[i2].stringArgs[curString] + "\"";
+                                        curString++;
+                                        break;
+                                    case 'i':
+                                        tempString += tempEntry.commands[i2].intArgs[curInt];
+                                        curInt++;
+                                        break;
+                                    case 'u':
+                                        tempString += tempEntry.commands[i2].uintArgs[curUint];
+                                        curUint++;
+                                        break;
+                                    case 'f':
+                                        tempString += tempEntry.commands[i2].floatArgs[curFloat];
+                                        curFloat++;
+                                        break;
+                                    case 'h':
+                                        tempString += "0x" + tempEntry.commands[i2].byteArgs[curByte];
+                                        curByte++;
+                                        break;
+                                    case 'b':
+                                        bool tempBool = tempEntry.commands[i2].boolArgs[curBool];
+                                        if (tempBool)
+                                            tempString += "true";
+                                        else
+                                            tempString += "false";
+                                        curBool++;
+                                        break;
+                                }
+                                if(i3 + 1 != tempCommand.args.Length)
+                                    tempString += ", ";
+                                else if(i4 + 1 != typeCount)
+                                    tempString += ", ";
+                            }
+                        }
+                    }
+                    tempString += ")";
+                    buffer.Add(tempString);
+                }
+                buffer.Add("");
+            }
+
+            File.WriteAllLines(outPath, buffer);
+
+            Console.WriteLine("Complete!");
         }
 
         public void Compiler(string inPath, string outPath, CommandDB_Reader db_Reader, ushort version)
@@ -231,6 +318,10 @@ namespace DIPsConsoleCompiler
                                         entry.AddRange(BitConverter.GetBytes(Int32.Parse(args[i3])));
                                         entrySize += 4;
                                         break;
+                                    case 'f':
+                                        entry.AddRange(BitConverter.GetBytes(float.Parse(args[i3])));
+                                        entrySize += 4;
+                                        break;
                                     case 'b':
                                         if (args[i3] == "true")
                                             entry.Add(0x01);
@@ -240,11 +331,7 @@ namespace DIPsConsoleCompiler
                                         break;
                                     case 'h':
                                         args[i3] = args[i3].Remove(0, 2);
-                                        for (int i4 = 0; i4 < args[i3].Length / 2; i4 += 2)
-                                        {
-                                            string bte = args[i3][i4].ToString(); bte += args[i3][i4 + 1];
-                                            entry.Add(Byte.Parse(bte));
-                                        }
+                                        entry.Add(Byte.Parse(args[i3]));
                                         entrySize += args[i3].Length / 2;
                                         break;
                                 }
@@ -320,6 +407,10 @@ namespace DIPsConsoleCompiler
                             break;
                         case "u":
                             if (UInt32.Parse(input[i2]) > UInt32.MaxValue && UInt32.Parse(input[i2]) < UInt32.MinValue)
+                                return false;
+                            break;
+                        case "f":
+                            if (float.Parse(input[i2]) > float.MaxValue && float.Parse(input[i2]) < float.MinValue)
                                 return false;
                             break;
                         case "b":
