@@ -1,0 +1,97 @@
+Header:
+	Bytes 1-5 are "DPS |"
+	Byte 6 is file type
+		00 is script file
+		01 is collision file
+
+		0A is data array
+
+		FF is archive of multiple files
+	Bytes 7-10 are the number of entries
+	Bytes 11-12 is the file version
+	Bytes 13-14 is the size of the signiture (only weird string)
+	Byte 15 (size changed by signiture size) is the file signiture
+	Bytes 16 - 20 are null bytes
+
+
+Script: (script entry is same as state/subroutine in bbscript)
+	Byte 1 is the size of the entry name
+	Bytes 2-X is the entry name
+	Bytes 3-6 is the entry size (not including header)
+	Byte 7 is if the entry is a subroutine or not
+	Rest of entry is the commands
+		Refer to Command Database for commands
+
+
+Collision:
+	Byte 1 is the size of the entry name
+	Bytes 2-X is the entry name
+	Byte 3 is if a sprite or an model anim is loaded
+	Byte 4 is box count
+	Byte 5 is the chunk count
+	Byte 6 is if the boxes are spheres or not
+	Byte 7 is the boxes are 3d
+	Byte 9 is the loaded sprite/anim count
+	(Byte 10 is the size of the next sprite
+	Bytes 11 is the names of the sprites/anims) - these get repeted for every sprite/anim loaded
+	Rest of entry is split up into Chunks then Boxes
+	Chunk Bytes: (if calling an anim, chunks values dont affect how its rendered, but it's still required)
+		Byte 1 is the number of the sprite/anim the chunk will use
+		Byte 2 is the chunk ID
+		NOTE: rest will not be here if calling an anim
+		Bytes 3-6 is the UV X in pixels (int32)
+		Bytes 7-10 is the UV Y in pixels (int32)
+		Bytes 11-14 is the UV width in pixels(int32)
+		Bytes 15-18 is the UV height in pixels(int32)
+		Bytes 19-22 is the X offset from top right (based on UV, int32)
+		Bytes 23-26 is the Y offset from top right (based on UV, int32)
+		Bytes 27-30 is the scaled width of the chunk (float32)
+		Bytes 31-34 is the scaled width of the chunk (float32)
+		Bytes 35-38 is the X rotation from origin (float32)
+		Bytes 39-42 is the Y rotation from origin (float32)
+		Bytes 43-46 is the Z rotation from origin (float32)
+	Boxes Bytes:
+		Byte 1 is the box ID (int8)
+		Byte 2 is the box type (int8)
+		Box Types:
+			0 is Collision Box
+			1 is HurtBox
+			2 is HitBox
+			3 is Snap-to Box
+			4 is Head Snap Box
+			5 is Neck Snap Box
+			6 is Waist Snap Box
+			7 is Left Hand Snap Box
+			8 is Right Hand Snap Box
+			9 is Left Foot Snap Box
+			10 is Right Foot Snap Box
+			11 is Misc Box
+		NOTE: These is only here if its a box
+		Bytes 3-6 is the X location (int32)
+		Bytes 7-10 is the X radius (int32)
+		Bytes 11-14 is the Y location (int32)
+		Bytes 15-18 is the Y radius (int32)
+		NOTE: Rest is only here if its a 3d box
+		Bytes 19-22 is the Z location (int32)
+		Bytes 23-26 is the Z radius (int32)
+		NOTE: These are only here if its a sphere
+		Bytes 3-6 is the radius (int32)
+		Bytes 7-10 is the X location (int32)
+		Bytes 11-14 is the Y location (int32)
+		NOTE: This is only here if its a 3d sphere
+		Bytes 15-18 is the Z location (int32)
+			
+
+Data Array:
+	Byte 1 is size of entry name
+	Bytes 2-X is entry name
+	Bytes 3-4 is amount of tables
+	Byte 5 is the size of the struct defnition
+	Bytes 6-X is the struct definition
+		00 is int
+		01 is uint
+		02 is float
+		03 is string (strings are made with first byte being the size of the string and second byte onwards being the string itself)
+		04 is byte
+		05 is bool
+	Bytes 7-X is the arrays

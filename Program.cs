@@ -12,7 +12,7 @@ namespace DIPsConsoleCompiler
         static void Main(string[] args)
         {
             string inPath = "", outPath = "";
-            bool decompile = false, dbValid = false, bb = false;
+            bool decompile = false, dbValid = false, bb = false, dataArray = false;
             CommandDB_Reader dB_Reader = new CommandDB_Reader();
             Program p = new Program();
             ushort version = 1;
@@ -52,16 +52,22 @@ namespace DIPsConsoleCompiler
                             i++;
                             dB_Reader.init(args[i]);
                             break;
+                        case "-da":
+                            dataArray = true;
+                            break;
                     }
                 }
 
-                if(!dB_Reader.made)
-                    dB_Reader.init(Environment.CurrentDirectory + "/CommandDB/DPScript_1.0.txt");
+                if (!dataArray)
+                {
+                    if (!dB_Reader.made)
+                        dB_Reader.init(Environment.CurrentDirectory + "/CommandDB/DPScript_1.0.txt");
 
-                if (!(dB_Reader.errorAt > -1))
-                    dbValid = true;
-                else
-                    Console.WriteLine("Error Parsing CommandDB at line " + dB_Reader.errorAt);
+                    if (!(dB_Reader.errorAt > -1))
+                        dbValid = true;
+                    else
+                        Console.WriteLine("Error Parsing CommandDB at line " + dB_Reader.errorAt);
+                }
             }
 
             if (dbValid == true)
@@ -72,6 +78,21 @@ namespace DIPsConsoleCompiler
                     p.Decompiler(inPath, outPath, dB_Reader);
                 else
                     p.Compiler(inPath, outPath, dB_Reader, version);
+            }
+
+            if(dataArray)
+            {
+                Data_Array array = new Data_Array();
+                if (decompile)
+                {
+                    
+                }
+                else
+                {
+                    array.parseTextFile(inPath);
+                    array.writeToBinary(outPath, version);
+                }
+                
             }
 
 
