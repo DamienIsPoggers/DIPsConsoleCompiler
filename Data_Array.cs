@@ -139,33 +139,33 @@ namespace DIPsConsoleCompiler
                         if (!String.IsNullOrEmpty(line) || line.Contains(","))
                         {
                             line = line.Trim();
-                            line = line.Remove(line.LastIndexOf(","), 0);
+                            line = line.Remove(line.LastIndexOf(","), 1);
                             //Console.WriteLine(entry.fileStruct[i3]);
                             switch (entry.fileStruct[i3])
                             {
                                 case 0:
                                     int tempi;
-                                    if (Int32.TryParse(line, out tempi))
+                                    if (!Int32.TryParse(line, out tempi))
                                         errorParsing(curLine);
                                     tempArray.ints.Add(tempi);
                                     break;
                                 case 1:
                                     uint tempu;
-                                    if (UInt32.TryParse(line, out tempu))
+                                    if (!UInt32.TryParse(line, out tempu))
                                         errorParsing(curLine);
                                     tempArray.uints.Add(tempu);
                                     //Console.WriteLine(tempu);
                                     break;
                                 case 2:
                                     float tempf;
-                                    if (float.TryParse(line, out tempf))
+                                    if (!float.TryParse(line, out tempf))
                                         errorParsing(curLine);
                                     tempArray.floatArgs.Add(tempf);
                                     break;
                                 case 3:
                                     if (!line.StartsWith("\"") && !line.EndsWith("\""))
                                         errorParsing(curLine);
-                                    line = line.Remove(0, 1); line = line.Remove(line.Length - 2);
+                                    line = line.Remove(0, 1); line = line.Remove(line.LastIndexOf("\""));
                                     tempArray.strings.Add(line);
                                     //Console.WriteLine(line);
                                     break;
@@ -291,7 +291,11 @@ namespace DIPsConsoleCompiler
                     }
                 }
             }
-            FileStream output = File.Create(outPath);
+            FileStream output;
+            if (File.Exists(outPath))
+                output = File.Open(outPath, FileMode.Create);
+            else
+                output = File.Create(outPath);
             output.Write(buffer.ToArray(), 0, buffer.Count);
         }
     }

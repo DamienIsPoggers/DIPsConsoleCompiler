@@ -26,19 +26,17 @@ Script: (script entry is same as state/subroutine in bbscript)
 Collision:
 	Byte 1 is the size of the entry name
 	Bytes 2-X is the entry name
-	Byte 3 is if a sprite or an model anim is loaded
-	Byte 4 is box count
-	Byte 5 is the chunk count
-	Byte 6 is if the boxes are spheres or not
-	Byte 7 is the boxes are 3d
-	Byte 9 is the loaded sprite/anim count
-	(Byte 10 is the size of the next sprite
-	Bytes 11 is the names of the sprites/anims) - these get repeted for every sprite/anim loaded
+	Byte 3 is box count
+	Byte 4 is the chunk count
+	Byte 5 is if the boxes are spheres or not
+	Byte 6 is if the boxes/spheres are 3d
+	Byte 7 is the loaded sprite/anim count
+	(Byte 8 is the size of the next sprite
+	Bytes 9 is the names of the sprites/anims) - these get repeted for every sprite/anim loaded
 	Rest of entry is split up into Chunks then Boxes
 	Chunk Bytes: (if calling an anim, chunks values dont affect how its rendered, but it's still required)
 		Byte 1 is the number of the sprite/anim the chunk will use
 		Byte 2 is the chunk ID
-		NOTE: rest will not be here if calling an anim
 		Bytes 3-6 is the UV X in pixels (int32)
 		Bytes 7-10 is the UV Y in pixels (int32)
 		Bytes 11-14 is the UV width in pixels(int32)

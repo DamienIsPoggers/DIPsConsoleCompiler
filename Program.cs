@@ -12,7 +12,8 @@ namespace DIPsConsoleCompiler
         static void Main(string[] args)
         {
             string inPath = "", outPath = "";
-            bool decompile = false, dbValid = false, bb = false, dataArray = false;
+            bool decompile = false, dbValid = false, bb = false, dataArray = false, collision = false,
+                loadJonbFolder = false, gbvsCol = false;
             CommandDB_Reader dB_Reader = new CommandDB_Reader();
             Program p = new Program();
             ushort version = 1;
@@ -55,10 +56,19 @@ namespace DIPsConsoleCompiler
                         case "-da":
                             dataArray = true;
                             break;
+                        case "-jonbF":
+                            loadJonbFolder = true;
+                            break;
+                        case "-col":
+                            collision = true;
+                            break;
+                        case "-gbvs":
+                            gbvsCol = true;
+                            break;
                     }
                 }
 
-                if (!dataArray)
+                if (!dataArray && !loadJonbFolder && !collision)
                 {
                     if (!dB_Reader.made)
                         dB_Reader.init(Environment.CurrentDirectory + "/CommandDB/DPScript_1.0.txt");
@@ -93,6 +103,19 @@ namespace DIPsConsoleCompiler
                     array.writeToBinary(outPath, version);
                 }
                 
+            }
+            else if(loadJonbFolder)
+            {
+                Collision col = new Collision();
+                if(decompile)
+                {
+
+                }
+                else
+                {
+                    col.loadJonbinsFromFolder(inPath, gbvsCol);
+                    col.writeToBinary(outPath, version);
+                }
             }
 
 
@@ -210,7 +233,7 @@ namespace DIPsConsoleCompiler
                     string com = line.Remove(line.IndexOf("("));
                     //Console.WriteLine(com);
                     string arg = line.Remove(0, line.IndexOf("(") + 1);
-                    arg = arg.Remove(arg.IndexOf(")"));
+                    arg = arg.Remove(arg.LastIndexOf(")"));
                     //Console.WriteLine(arg);
                     if (com.Contains("Command_"))
                     {
@@ -321,42 +344,7 @@ namespace DIPsConsoleCompiler
                         {
                             uint typeCount = UInt32.Parse(temp.args[i2][0].ToString());
                             for (int i3 = (int)argCount; i3 < argCount + typeCount; i3++)
-                            {
-                                switch (temp.args[i2][1])
-                                {
-                                    case 's':
-                                        if (args[i3].StartsWith("\"") && args[i3].EndsWith("\""))
-                                        { args[i3] = args[i3].Remove(0, 1); args[i3] = args[i3].Remove(args[i3].Length - 1, 1); }
-                                        entry.Add(BitConverter.GetBytes(args[i3].Length)[0]);
-                                        entrySize += args[i3].Length + 1;
-                                        entry.AddRange(Encoding.ASCII.GetBytes(args[i3]));
-                                        break;
-                                    case 'u':
-                                        entry.AddRange(BitConverter.GetBytes(UInt32.Parse(args[i3])));
-                                        entrySize += 4;
-                                        break;
-                                    case 'i':
-                                        entry.AddRange(BitConverter.GetBytes(Int32.Parse(args[i3])));
-                                        entrySize += 4;
-                                        break;
-                                    case 'f':
-                                        entry.AddRange(BitConverter.GetBytes(float.Parse(args[i3])));
-                                        entrySize += 4;
-                                        break;
-                                    case 'b':
-                                        if (args[i3] == "true")
-                                            entry.Add(0x01);
-                                        else
-                                            entry.Add(0x00);
-                                        entrySize++;
-                                        break;
-                                    case 'h':
-                                        args[i3] = args[i3].Remove(0, 2);
-                                        entry.Add(Byte.Parse(args[i3]));
-                                        entrySize += args[i3].Length / 2;
-                                        break;
-                                }
-                            }
+                                entrySize = writeToBinarySwitch(entry, i2, i3, temp, entrySize, args, db_Reader);
                             argCount += typeCount;
                         }
                     }
@@ -379,19 +367,113 @@ namespace DIPsConsoleCompiler
             Console.WriteLine("Complete!");
         }
 
+        int writeToBinarySwitch(List<byte> entry, int i2, int i3, Command temp,
+            int entrySize, string[] args, CommandDB_Reader db_Reader)
+        {
+            //Console.WriteLine(temp.args[i2]);
+            switch (temp.args[i2][1])
+            {
+                case 's':
+                    if (args[i3].StartsWith("\"") && args[i3].EndsWith("\""))
+                    { args[i3] = args[i3].Remove(0, 1); args[i3] = args[i3].Remove(args[i3].Length - 1, 1); }
+                    entry.Add(BitConverter.GetBytes(args[i3].Length)[0]);
+                    entrySize += args[i3].Length + 1;
+                    entry.AddRange(Encoding.ASCII.GetBytes(args[i3]));
+                    break;
+                case 'u':
+                    entry.AddRange(BitConverter.GetBytes(UInt32.Parse(args[i3])));
+                    entrySize += 4;
+                    break;
+                case 'i':
+                    entry.AddRange(BitConverter.GetBytes(Int32.Parse(args[i3])));
+                    entrySize += 4;
+                    break;
+                case 'f':
+                    entry.AddRange(BitConverter.GetBytes(float.Parse(args[i3])));
+                    entrySize += 4;
+                    break;
+                case 'b':
+                    if (args[i3] == "true")
+                        entry.Add(0x01);
+                    else
+                        entry.Add(0x00);
+                    entrySize++;
+                    break;
+                case 'h':
+                    if (args[i3].StartsWith("0x"))
+                        args[i3] = args[i3].Remove(0, 2);
+                    byte tempByte = Byte.Parse(args[i3]);
+                    entry.Add(tempByte);
+                    entrySize++;
+                    break;
+                case 'm':
+                    int tempi;
+                    Math math = new Math();
+                    byte mathType;
+                    if (Int32.TryParse(args[i3], out tempi))
+                        mathType = math.convertToByte(math.getMathTypeInt(tempi));
+                    else
+                        mathType = math.convertToByte(math.getMathTypeString(args[i3]));
+                    entry.Add(mathType);
+                    entrySize++;
+                    break;
+                case 'c':
+                    //Console.WriteLine(args[i3]);
+                    if (args[i3].Contains("(") && args[i3].Contains(")"))
+                    {
+                        string com = args[i3].Remove(args[i3].IndexOf("("));
+                        string arg = args[i3].Remove(0, args[i3].IndexOf("(") + 1);
+                        arg = arg.Remove(arg.LastIndexOf(")"));
+                        //Console.WriteLine(arg);
+                        Command temp2 = db_Reader.getCommandInDB(db_Reader.findCommandName(com));
+                        entry.AddRange(BitConverter.GetBytes(temp2.id));
+                        //Console.WriteLine(temp2.id);
+                        entrySize += 4;
+
+                        if (temp.args[0] != "n")
+                        {
+                            string[] args2 = seperateArgs(arg);
+                            uint argCount = 0;
+                            for (int j2 = 0; j2 < temp2.args.Length; j2++)
+                            {
+                                uint typeCount = UInt32.Parse(temp2.args[j2][0].ToString());
+                                for (int j3 = (int)argCount; j3 < argCount + typeCount; j3++)
+                                    entrySize = writeToBinarySwitch(entry, j2, j3, temp2, entrySize, args2, db_Reader);
+                                argCount += typeCount;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        entry.AddRange(BitConverter.GetBytes(Int32.Parse(args[i3])));
+                        entrySize += 4;
+                    }
+                    break;
+            }
+
+            return entrySize;
+        }
+
         string[] seperateArgs(string args)
         {
             List<string> seperated = new List<string>();
             string arg = "";
+            int onNewCom = 0;
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == ',')
+                if (args[i] == ',' && onNewCom == 0)
                 {
                     seperated.Add(arg);
                     arg = "";
                 }
                 else
                     arg += args[i];
+
+                if (args[i] == '(')
+                    onNewCom++;
+                else if (args[i] == ')')
+                    onNewCom--;
+
             }
             if (arg != "")
                 seperated.Add(arg);
