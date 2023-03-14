@@ -13,7 +13,8 @@ namespace DIPsConsoleCompiler
         {
             string inPath = "", outPath = "";
             bool decompile = false, dbValid = false, bb = false, dataArray = false, collision = false,
-                loadJonbFolder = false, gbvsCol = false;
+                loadJonbFolder = false, gbvsCol = false, encrypt = false, decrypt = false;
+            string encryptionKey = "";
             CommandDB_Reader dB_Reader = new CommandDB_Reader();
             Program p = new Program();
             ushort version = 1;
@@ -65,10 +66,20 @@ namespace DIPsConsoleCompiler
                         case "-gbvs":
                             gbvsCol = true;
                             break;
+                        case "-enc":
+                            encrypt = true;
+                            i++;
+                            encryptionKey = args[i];
+                            break;
+                        case "-decrypt":
+                            decrypt = true;
+                            i++;
+                            encryptionKey = args[i];
+                            break;
                     }
                 }
 
-                if (!dataArray && !loadJonbFolder && !collision)
+                if (!dataArray && !loadJonbFolder && !collision && !encrypt && !decrypt)
                 {
                     if (!dB_Reader.made)
                         dB_Reader.init(Environment.CurrentDirectory + "/CommandDB/DPScript_1.0.txt");
@@ -116,6 +127,14 @@ namespace DIPsConsoleCompiler
                     col.loadJonbinsFromFolder(inPath, gbvsCol);
                     col.writeToBinary(outPath, version);
                 }
+            }
+            else if(encrypt || decrypt)
+            {
+                Encryption encryptor = new Encryption();
+                if(encrypt)
+                    encryptor.Encrypt(inPath, outPath, encryptionKey);
+                else
+                    encryptor.Decrypt(inPath, outPath, encryptionKey);
             }
 
 
@@ -281,19 +300,20 @@ namespace DIPsConsoleCompiler
             int entryId = db_Reader.getEntryDbId();
             if (entryId == -1)
             {
-                Console.WriteLine("No entry id in commanddb.");
+                //Console.WriteLine("No entry id in commanddb.");
                 return;
             }
 
-            foreach (int i in LineCommand)
+            for(int i = 0; i < LineCommand.Count; i++)
             {
+                //Console.WriteLine(LineCommand.Count + ", " + i);
                 if (LineCommand[i] == entryId)
                     entryCount++;
             }
-
+            int entryCount2 = entryCount;
             List<byte> buffer = new List<byte>();
             buffer.AddRange(Encoding.ASCII.GetBytes("DPS |").ToList()); buffer.Add(0x00); //header and script type file
-            buffer.AddRange(BitConverter.GetBytes(entryCount)); //entry count
+            //buffer.AddRange(BitConverter.GetBytes(entryCount)); //entry count insert at 6
             buffer.AddRange(BitConverter.GetBytes(version)); //file version
             string signiture = "DIPsConsoleCompiler"; byte[] signSize = { 0x13, 0x00 };
             buffer.AddRange(signSize); buffer.AddRange(Encoding.ASCII.GetBytes(signiture).ToList()); //signiture
@@ -303,6 +323,13 @@ namespace DIPsConsoleCompiler
             {
                 List<byte> entry = new List<byte>();
                 int entrySize = 0;
+                //Console.WriteLine(LineArg.Count);
+                //Console.ReadKey();
+                if (LineArg.Count <= 0)
+                {
+                    entryCount2--;
+                    continue;
+                }
                 string[] entryHeader = seperateArgs(LineArg[0]);
                 int sizePlacement = 1;
                 if (compareArgs(db_Reader.getArgs(entryId), entryHeader))
@@ -357,6 +384,8 @@ namespace DIPsConsoleCompiler
 
                 buffer.AddRange(entry);
             }
+
+            buffer.InsertRange(6, BitConverter.GetBytes(entryCount2));
 
             if (valid)
             {
@@ -416,6 +445,30 @@ namespace DIPsConsoleCompiler
                         mathType = math.convertToByte(math.getMathTypeString(args[i3]));
                     entry.Add(mathType);
                     entrySize++;
+                    break;
+                case 'v':
+                    switch(entry[entry.Count - 2])
+                    {
+                        case 0:
+                            entry.AddRange(BitConverter.GetBytes(Int32.Parse(args[i3])));
+                            entrySize += 4;
+                            break;
+                        case 1:
+                            entry.AddRange(BitConverter.GetBytes(UInt32.Parse(args[i3])));
+                            entrySize += 4;
+                            break;
+                        case 2:
+                            entry.AddRange(BitConverter.GetBytes(float.Parse(args[i3])));
+                            entrySize += 4;
+                            break;
+                        case 3:
+                            if (args[i3].StartsWith("\"") && args[i3].EndsWith("\""))
+                            { args[i3] = args[i3].Remove(0, 1); args[i3] = args[i3].Remove(args[i3].Length - 1, 1); }
+                            entry.Add(BitConverter.GetBytes(args[i3].Length)[0]);
+                            entrySize += args[i3].Length + 1;
+                            entry.AddRange(Encoding.ASCII.GetBytes(args[i3]));
+                            break;
+                    }
                     break;
                 case 'c':
                     //Console.WriteLine(args[i3]);

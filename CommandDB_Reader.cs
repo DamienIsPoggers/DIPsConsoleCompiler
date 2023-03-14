@@ -52,9 +52,13 @@ namespace DIPsConsoleCompiler
                 Command temp = new Command();
                 for (int i2 = 0; i2 < args.Count; i2++)
                 {
-                    int id = new int();
+                    int id;
+                    //Console.WriteLine(args[i2]);
                     if (Int32.TryParse(args[i2], out id))
+                    {
                         temp.id = id;
+                        //Console.WriteLine("Parsed");
+                    }
                     else if (args[i2][0] == '"' && args[i2][args[i2].Length - 1] == '"')
                     {
                         string tempString = args[i2].Remove(0, 1);
@@ -81,6 +85,7 @@ namespace DIPsConsoleCompiler
         {
             List<string> rtrn = new List<string>();
             string type = "";
+            //Console.WriteLine(arg);
             while (arg.Length != 0)
             {
                 if (arg[0] == 'n')
@@ -91,7 +96,13 @@ namespace DIPsConsoleCompiler
                 else
                 {
                     type += arg[0]; type += arg[1];
+                    int tempInt;
                     arg = arg.Remove(0, 2);
+                    if(Int32.TryParse(type, out tempInt))
+                    {
+                        type += arg[0];
+                        arg = arg.Remove(0, 1);
+                    }
                     rtrn.Add(type);
                     type = "";
                     continue;
