@@ -114,8 +114,8 @@ namespace DIPsConsoleCompiler
                         int x1 = (int)file.ReadSingle(), y1 = (int)file.ReadSingle(),
                             x2 = (int)file.ReadSingle(), y2 = (int)file.ReadSingle();
 
-                        tempBox.x = new int[] {  -x1 -(x2/2), x2 / 2 };
-                        tempBox.y = new int[] { -y1 - (y2 / 2), y2 / 2};
+                        tempBox.x = new int[] { -x1, x2 };
+                        tempBox.y = new int[] { -y1, y2 };
 
                         if (gbvs)
                             file.ReadBytes(4);

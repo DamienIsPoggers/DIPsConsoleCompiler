@@ -66,12 +66,12 @@ Collision:
 			11 is Misc Box
 		NOTE: These is only here if its a box
 		Bytes 3-6 is the X location (int32)
-		Bytes 7-10 is the X radius (int32)
+		Bytes 7-10 is the X width (int32)
 		Bytes 11-14 is the Y location (int32)
-		Bytes 15-18 is the Y radius (int32)
+		Bytes 15-18 is the Y width (int32)
 		NOTE: Rest is only here if its a 3d box
 		Bytes 19-22 is the Z location (int32)
-		Bytes 23-26 is the Z radius (int32)
+		Bytes 23-26 is the Z width (int32)
 		NOTE: These are only here if its a sphere
 		Bytes 3-6 is the radius (int32)
 		Bytes 7-10 is the X location (int32)
