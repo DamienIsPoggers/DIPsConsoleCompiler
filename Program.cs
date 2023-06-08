@@ -422,7 +422,7 @@ namespace DIPsConsoleCompiler
                     entrySize += 4;
                     break;
                 case 'b':
-                    if (args[i3] == "true")
+                    if (args[i3] == "true" || args[i3] == "1")
                         entry.Add(0x01);
                     else
                         entry.Add(0x00);
