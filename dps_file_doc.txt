@@ -34,7 +34,7 @@ Collision:
 	(Byte 8 is the size of the next sprite
 	Bytes 9 is the names of the sprites/anims) - these get repeted for every sprite/anim loaded
 	Rest of entry is split up into Chunks then Boxes
-	Chunk Bytes: (if calling an anim, chunks values dont affect how its rendered, but it's still required)
+	Chunk Bytes:
 		Byte 1 is the number of the sprite/anim the chunk will use
 		Byte 2 is the chunk ID
 		Bytes 3-6 is the UV X in pixels (int32)

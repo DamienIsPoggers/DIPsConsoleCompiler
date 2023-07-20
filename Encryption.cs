@@ -35,7 +35,7 @@ namespace DIPsConsoleCompiler
                 else
                     b = (byte)(b + ((key[pointInKey] * key[pointInKey + 1]) - key[pointInKey - 1]));
 
-                pointInKey += (byte)(key[pointInKey] ^ 2);
+                pointInKey += (byte)(key[pointInKey] ^ 2 + 1);
 
                 buffer.Add(b);
             }
@@ -73,7 +73,7 @@ namespace DIPsConsoleCompiler
                 else
                     b = (byte)(b - ((key[pointInKey] * key[pointInKey + 1]) - key[pointInKey - 1]));
 
-                pointInKey += (byte)(key[pointInKey] ^ 2);
+                pointInKey += (byte)(key[pointInKey] ^ 2 + 1);
 
                 buffer.Add(b);
             }
